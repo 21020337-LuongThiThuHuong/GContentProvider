@@ -13,9 +13,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 class ContactAdapter(
     private val onItemClick: (Contact) -> Unit,
-    private val onMultiSelectModeChanged: (Boolean) -> Unit // Callback to notify MainActivity about multi-select mode
+    private val onMultiSelectModeChanged: (Boolean) -> Unit, // Callback to notify MainActivity about multi-select mode
 ) : RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
-
     private val contacts = mutableListOf<Contact>()
     private val selectedContacts = mutableSetOf<Contact>()
     var isMultiSelectMode = false
@@ -43,12 +42,18 @@ class ContactAdapter(
 
     fun getSelectedContacts(): List<Contact> = selectedContacts.toList()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ContactViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.contact_item, parent, false)
         return ContactViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ContactViewHolder,
+        position: Int,
+    ) {
         val contact = contacts[position]
 
         holder.nameTextView.text = contact.name
@@ -69,11 +74,12 @@ class ContactAdapter(
             true
         }
 
-        holder.checkbox.visibility = if (isMultiSelectMode) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        holder.checkbox.visibility =
+            if (isMultiSelectMode) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
 
         holder.checkbox.isChecked = selectedContacts.contains(contact)
 
@@ -93,13 +99,15 @@ class ContactAdapter(
 
         Log.e(
             "ContactAdapter",
-            "Selected contacts: ${selectedContacts.joinToString { it.name }}"
+            "Selected contacts: ${selectedContacts.joinToString { it.name }}",
         )
     }
 
     override fun getItemCount(): Int = contacts.size
 
-    class ContactViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ContactViewHolder(
+        itemView: View,
+    ) : RecyclerView.ViewHolder(itemView) {
         val nameTextView: TextView = itemView.findViewById(R.id.name)
         val phoneTextView: TextView = itemView.findViewById(R.id.phone)
         val avaImage: ImageView = itemView.findViewById(R.id.avatar)
@@ -107,15 +115,16 @@ class ContactAdapter(
     }
 
     companion object {
-        private val colors = arrayOf(
-            Color.parseColor("#FF7F27"),
-            Color.parseColor("#3580BB"),
-            Color.parseColor("#7F82BB"),
-            Color.parseColor("#377D22"),
-            Color.parseColor("#F08784"),
-            Color.parseColor("#8E403A"),
-            Color.parseColor("#F5D547"),
-            Color.parseColor("#F2A884")
-        )
+        private val colors =
+            arrayOf(
+                Color.parseColor("#FF7F27"),
+                Color.parseColor("#3580BB"),
+                Color.parseColor("#7F82BB"),
+                Color.parseColor("#377D22"),
+                Color.parseColor("#F08784"),
+                Color.parseColor("#8E403A"),
+                Color.parseColor("#F5D547"),
+                Color.parseColor("#F2A884"),
+            )
     }
 }

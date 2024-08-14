@@ -64,13 +64,19 @@ class EditContactActivity : AppCompatActivity() {
             val selection = "${ContactsContract.Data._ID} = ?"
             val selectionArgs = arrayOf(id.toString())
 
-            val cursor = contentResolver.query(rawContactUri, projection, selection, selectionArgs, null)
+            val cursor =
+                contentResolver.query(rawContactUri, projection, selection, selectionArgs, null)
 
             if (cursor?.moveToFirst() == true) {
-                val rawContactId = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID))
+                val rawContactId =
+                    cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID))
                 cursor.close()
 
-                val deleteUri = ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, rawContactId)
+                val deleteUri =
+                    ContentUris.withAppendedId(
+                        ContactsContract.RawContacts.CONTENT_URI,
+                        rawContactId,
+                    )
                 val rowsDeleted = contentResolver.delete(deleteUri, null, null)
 
                 if (rowsDeleted > 0) {
@@ -106,30 +112,55 @@ class EditContactActivity : AppCompatActivity() {
 
             if (rawContactId != null) {
                 // Update name
-                val nameValues = ContentValues().apply {
-                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId) // Sử dụng RAW_CONTACT_ID
-                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                    put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                }
-                val nameUpdated = contentResolver.update(
-                    ContactsContract.Data.CONTENT_URI,
-                    nameValues,
-                    "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                    arrayOf(rawContactId.toString(), ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                )
+                val nameValues =
+                    ContentValues().apply {
+                        put(
+                            ContactsContract.Data.RAW_CONTACT_ID,
+                            rawContactId,
+                        ) // Sử dụng RAW_CONTACT_ID
+                        put(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                        )
+                        put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                    }
+                val nameUpdated =
+                    contentResolver.update(
+                        ContactsContract.Data.CONTENT_URI,
+                        nameValues,
+                        "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                        arrayOf(
+                            rawContactId.toString(),
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                        ),
+                    )
                 // Update phone number
-                val phoneValues = ContentValues().apply {
-                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId) // Sử dụng RAW_CONTACT_ID
-                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                    put(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                    put(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
-                }
-                val phoneUpdated = contentResolver.update(
-                    ContactsContract.Data.CONTENT_URI,
-                    phoneValues,
-                    "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                    arrayOf(rawContactId.toString(), ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                )
+                val phoneValues =
+                    ContentValues().apply {
+                        put(
+                            ContactsContract.Data.RAW_CONTACT_ID,
+                            rawContactId,
+                        ) // Sử dụng RAW_CONTACT_ID
+                        put(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                        )
+                        put(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                        put(
+                            ContactsContract.CommonDataKinds.Phone.TYPE,
+                            ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                        )
+                    }
+                val phoneUpdated =
+                    contentResolver.update(
+                        ContactsContract.Data.CONTENT_URI,
+                        phoneValues,
+                        "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                        arrayOf(
+                            rawContactId.toString(),
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                        ),
+                    )
 
                 if (nameUpdated == 0 && phoneUpdated == 0) {
                     Toast.makeText(this, "Failed to update contact", Toast.LENGTH_SHORT).show()
@@ -138,31 +169,43 @@ class EditContactActivity : AppCompatActivity() {
                 // Handle the case where RAW_CONTACT_ID is not found
                 Toast.makeText(this, "Failed to find RAW_CONTACT_ID", Toast.LENGTH_SHORT).show()
             }
-
         } else {
             // Create new contact
-            val newValues = ContentValues().apply {
-                put(ContactsContract.RawContacts.ACCOUNT_TYPE, null as String?)
-                put(ContactsContract.RawContacts.ACCOUNT_NAME, null as String?)
-            }
-            val rawContactUri = contentResolver.insert(ContactsContract.RawContacts.CONTENT_URI, newValues)
+            val newValues =
+                ContentValues().apply {
+                    put(ContactsContract.RawContacts.ACCOUNT_TYPE, null as String?)
+                    put(ContactsContract.RawContacts.ACCOUNT_NAME, null as String?)
+                }
+            val rawContactUri =
+                contentResolver.insert(ContactsContract.RawContacts.CONTENT_URI, newValues)
             val newRawContactId = rawContactUri?.lastPathSegment?.toLongOrNull() ?: return
 
             // Add name
-            val nameValues = ContentValues().apply {
-                put(ContactsContract.Data.RAW_CONTACT_ID, newRawContactId)
-                put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-            }
+            val nameValues =
+                ContentValues().apply {
+                    put(ContactsContract.Data.RAW_CONTACT_ID, newRawContactId)
+                    put(
+                        ContactsContract.Data.MIMETYPE,
+                        ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE,
+                    )
+                    put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                }
             contentResolver.insert(ContactsContract.Data.CONTENT_URI, nameValues)
 
             // Add phone number
-            val phoneValues = ContentValues().apply {
-                put(ContactsContract.Data.RAW_CONTACT_ID, newRawContactId)
-                put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                put(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                put(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
-            }
+            val phoneValues =
+                ContentValues().apply {
+                    put(ContactsContract.Data.RAW_CONTACT_ID, newRawContactId)
+                    put(
+                        ContactsContract.Data.MIMETYPE,
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                    )
+                    put(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                    put(
+                        ContactsContract.CommonDataKinds.Phone.TYPE,
+                        ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE,
+                    )
+                }
             contentResolver.insert(ContactsContract.Data.CONTENT_URI, phoneValues)
         }
 
@@ -175,13 +218,14 @@ class EditContactActivity : AppCompatActivity() {
         val projection = arrayOf(ContactsContract.Data.RAW_CONTACT_ID)
         val selection = "${ContactsContract.Data._ID} =?"
         val selectionArgs = arrayOf(dataId.toString())
-        val cursor = contentResolver.query(
-            ContactsContract.Data.CONTENT_URI,
-            projection,
-            selection,
-            selectionArgs,
-            null
-        )
+        val cursor =
+            contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                projection,
+                selection,
+                selectionArgs,
+                null,
+            )
         cursor?.use {
             if (it.moveToFirst()) {
                 return it.getLong(it.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID))
