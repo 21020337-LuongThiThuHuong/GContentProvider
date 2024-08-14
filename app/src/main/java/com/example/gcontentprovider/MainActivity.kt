@@ -68,7 +68,42 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.convertButton.setOnClickListener {
-            convertPhoneNumbers()
+            val contactsToConvert = mutableListOf<Contact>()
+
+            val cursor = contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone._ID, ContactsContract.CommonDataKinds.Phone.NUMBER),
+                null,
+                null,
+                null
+            )
+
+            cursor?.use {
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
+                    val phone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
+
+                    if (phone.startsWith("0167") || phone.startsWith("84167")) {
+                        contactsToConvert.add(Contact(id, "", phone))
+                    }
+                }
+            }
+
+            if (contactsToConvert.isNotEmpty()) {
+                AlertDialog.Builder(this).apply {
+                    setTitle("Xác nhận chuyển đổi")
+                    setMessage("Bạn có chắc chắn muốn chuyển ${contactsToConvert.size} số điện thoại từ đầu 0167 hoặc 84167 sang 037 không?")
+                    setPositiveButton("Chuyển đổi") { _, _ ->
+                        convertPhoneNumbers()
+                    }
+                    setNegativeButton("Hủy") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    create().show()
+                }
+            } else {
+                Toast.makeText(this, "Không có số điện thoại nào cần chuyển đổi", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.fab.setOnClickListener {
@@ -98,67 +133,64 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun convertPhoneNumbers() {
-        val contactsToConvert = mutableListOf<Contact>()
         val contentResolver = contentResolver
-
         val cursor = contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone._ID, ContactsContract.CommonDataKinds.Phone.NUMBER),
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone._ID,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+                ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID
+            ),
             null,
             null,
             null
         )
 
         cursor?.use {
+            val numbersConverted = mutableListOf<String>()
+
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone._ID))
+                val rawContactId = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID))
                 val phone = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER))
 
-                if (phone.startsWith("0167") || phone.startsWith("84167")) {
-                    contactsToConvert.add(Contact(id, "", phone))
+                val newPhone = when {
+                    phone.startsWith("0167") -> phone.replaceFirst("0167", "037")
+                    phone.startsWith("84167") -> phone.replaceFirst("84167", "037")
+                    else -> null
                 }
-            }
-        }
 
-        if (contactsToConvert.isNotEmpty()) {
-            AlertDialog.Builder(this).apply {
-                setTitle("Xác nhận chuyển đổi")
-                setMessage("Bạn có chắc chắn muốn chuyển ${contactsToConvert.size} số điện thoại từ đầu 0167 hoặc 84167 sang 037 không?")
-                setPositiveButton("Chuyển đổi") { _, _ ->
-                    contactsToConvert.forEach { contact ->
-                        val newPhone = when {
-                            contact.phone.startsWith("0167") -> contact.phone.replaceFirst("0167", "037")
-                            contact.phone.startsWith("84167") -> contact.phone.replaceFirst("84167", "037")
-                            else -> null
-                        }
-
-                        newPhone?.let {
-                            val values = ContentValues().apply {
-                                put(ContactsContract.CommonDataKinds.Phone.NUMBER, newPhone)
-                            }
-                            val selection = "${ContactsContract.CommonDataKinds.Phone._ID} = ?"
-                            val selectionArgs = arrayOf(contact.id.toString())
-                            val rowsUpdated = contentResolver.update(
-                                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                                values,
-                                selection,
-                                selectionArgs
-                            )
-                            if (rowsUpdated <= 0) {
-                                Toast.makeText(this@MainActivity, "Failed to update phone number for contact ID ${contact.id}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                if (newPhone != null) {
+                    val values = ContentValues().apply {
+                        put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                        put(ContactsContract.CommonDataKinds.Phone.NUMBER, newPhone)
                     }
-                    loadContacts()
+                    val selection = "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
+                    val selectionArgs = arrayOf(rawContactId.toString(), ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+
+                    val rowsUpdated = contentResolver.update(
+                        ContactsContract.Data.CONTENT_URI,
+                        values,
+                        selection,
+                        selectionArgs
+                    )
+
+                    if (rowsUpdated > 0) {
+                        numbersConverted.add(newPhone)
+                    } else {
+                        Toast.makeText(this, "Failed to update phone number for contact ID $id", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                setNegativeButton("Hủy") { dialog, _ ->
-                    dialog.dismiss()
-                }
-                create().show()
             }
-        } else {
-            Toast.makeText(this, "Không có số điện thoại nào cần chuyển đổi", Toast.LENGTH_SHORT).show()
+
+            if (numbersConverted.isNotEmpty()) {
+                Toast.makeText(this, "Updated ${numbersConverted.size} phone numbers", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No phone numbers were updated", Toast.LENGTH_SHORT).show()
+            }
         }
+
+        loadContacts()
     }
 
     override fun onActivityResult(
