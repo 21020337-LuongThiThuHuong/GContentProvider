@@ -109,12 +109,27 @@ class MainActivity : AppCompatActivity() {
             selectedContacts.forEach { contact ->
                 val contactId = contact.id
                 contactId?.let { id ->
-                    val uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, id)
-                    val rowsDeleted = contentResolver.delete(uri, null, null)
+                    val rawContactUri = ContactsContract.Data.CONTENT_URI
+                    val projection = arrayOf(ContactsContract.Data.RAW_CONTACT_ID)
+                    val selection = "${ContactsContract.Data._ID} = ?"
+                    val selectionArgs = arrayOf(id.toString())
 
-                    if (rowsDeleted > 0) {
-                        setResult(RESULT_OK)
+                    val cursor = contentResolver.query(rawContactUri, projection, selection, selectionArgs, null)
+
+                    if (cursor?.moveToFirst() == true) {
+                        val rawContactId = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID))
+                        cursor.close()
+
+                        val deleteUri = ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, rawContactId)
+                        val rowsDeleted = contentResolver.delete(deleteUri, null, null)
+
+                        if (rowsDeleted > 0) {
+                            setResult(RESULT_OK)
+                        } else {
+                        }
                     } else {
+                        cursor?.close()
+                        Toast.makeText(this, "Failed to find RawContactId", Toast.LENGTH_SHORT).show()
                     }
                 } ?: run {
                     Toast.makeText(this, "No contact to delete", Toast.LENGTH_SHORT).show()
@@ -127,7 +142,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "No contacts selected", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     private fun loadContacts() {
         val contacts = mutableListOf<Contact>()

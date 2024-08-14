@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -42,9 +43,9 @@ class EditContactActivity : AppCompatActivity() {
             phoneEditText.setText(contact.phone)
             contactId = contact.id // Get ID from contact
 
-            binding.deleteButton.visibility = Button.VISIBLE
+            binding.deleteButton.visibility = View.VISIBLE
         } else {
-            binding.deleteButton.visibility = Button.GONE
+            binding.deleteButton.visibility = View.GONE
         }
 
         saveButton.setOnClickListener {
@@ -58,15 +59,30 @@ class EditContactActivity : AppCompatActivity() {
 
     private fun deleteContact() {
         contactId?.let { id ->
-            val uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, id)
-            val rowsDeleted = contentResolver.delete(uri, null, null)
+            val rawContactUri = ContactsContract.Data.CONTENT_URI
+            val projection = arrayOf(ContactsContract.Data.RAW_CONTACT_ID)
+            val selection = "${ContactsContract.Data._ID} = ?"
+            val selectionArgs = arrayOf(id.toString())
 
-            if (rowsDeleted > 0) {
-                Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show()
-                setResult(RESULT_OK)
-                finish()
+            val cursor = contentResolver.query(rawContactUri, projection, selection, selectionArgs, null)
+
+            if (cursor?.moveToFirst() == true) {
+                val rawContactId = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.Data.RAW_CONTACT_ID))
+                cursor.close()
+
+                val deleteUri = ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, rawContactId)
+                val rowsDeleted = contentResolver.delete(deleteUri, null, null)
+
+                if (rowsDeleted > 0) {
+                    Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK)
+                    finish()
+                } else {
+                    Toast.makeText(this, "Failed to delete contact", Toast.LENGTH_SHORT).show()
+                }
             } else {
-                Toast.makeText(this, "Failed to delete contact", Toast.LENGTH_SHORT).show()
+                cursor?.close()
+                Toast.makeText(this, "Failed to find RawContactId", Toast.LENGTH_SHORT).show()
             }
         } ?: run {
             Toast.makeText(this, "No contact to delete", Toast.LENGTH_SHORT).show()
