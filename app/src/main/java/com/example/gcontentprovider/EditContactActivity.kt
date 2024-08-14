@@ -50,6 +50,11 @@ class EditContactActivity : AppCompatActivity() {
 
         val contentResolver = contentResolver
 
+        if (name.isEmpty() && phone.isEmpty()) {
+            Toast.makeText(this, "Name and phone cannot both be empty", Toast.LENGTH_SHORT).show()
+            return // Do not proceed further
+        }
+
         if (contactId != null) {
             // Get RAW_CONTACT_ID from DATA_ID
             val rawContactId = getRawContactId(contactId!!)
