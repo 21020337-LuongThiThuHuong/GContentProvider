@@ -1,5 +1,6 @@
 package com.example.gcontentprovider
 
+import android.content.ContentUris
 import android.content.ContentValues
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -9,16 +10,19 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.gcontentprovider.databinding.ActivityEditContactBinding
 
 class EditContactActivity : AppCompatActivity() {
     private lateinit var nameEditText: EditText
     private lateinit var phoneEditText: EditText
     private lateinit var saveButton: Button
     private var contactId: Long? = null
+    private lateinit var binding: ActivityEditContactBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_edit_contact)
+        binding = ActivityEditContactBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         // Enable edge-to-edge display
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -37,10 +41,35 @@ class EditContactActivity : AppCompatActivity() {
             nameEditText.setText(contact.name)
             phoneEditText.setText(contact.phone)
             contactId = contact.id // Get ID from contact
+
+            binding.deleteButton.visibility = Button.VISIBLE
+        } else {
+            binding.deleteButton.visibility = Button.GONE
         }
 
         saveButton.setOnClickListener {
             saveContact()
+        }
+
+        binding.deleteButton.setOnClickListener {
+            deleteContact()
+        }
+    }
+
+    private fun deleteContact() {
+        contactId?.let { id ->
+            val uri = ContentUris.withAppendedId(ContactsContract.Data.CONTENT_URI, id)
+            val rowsDeleted = contentResolver.delete(uri, null, null)
+
+            if (rowsDeleted > 0) {
+                Toast.makeText(this, "Contact deleted", Toast.LENGTH_SHORT).show()
+                setResult(RESULT_OK)
+                finish()
+            } else {
+                Toast.makeText(this, "Failed to delete contact", Toast.LENGTH_SHORT).show()
+            }
+        } ?: run {
+            Toast.makeText(this, "No contact to delete", Toast.LENGTH_SHORT).show()
         }
     }
 
